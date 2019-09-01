@@ -1,3 +1,4 @@
 #I'd like to ignore the `node-module` folder, but leave it for saving dependencies in case something will change further
 #
 #node-modules/
+related materials/
