@@ -1,47 +1,62 @@
-const AWS = require('aws-sdk');
-// const express = require('express');
-// const fileUpload = require('express-fileupload');
-// const app = express();
+const PORT = process.env.PORT || 3000;
 
-// app.use(fileUpload());
+const AWS = require('aws-sdk');
+const express = require('express');
+const fileUpload = require('express-fileupload');
+const app = express();
+
+app.use(fileUpload());
 
 AWS.config.loadFromPath('./credentials.json');
 AWS.config.update({ region: 'us-west-2' });
 
 var rekognition = new AWS.Rekognition();
 
-var params = {
-     CollectionId: "youtubers",
-     DetectionAttributes: [
-     ],
-     ExternalImageId: "youtubers",
-     Image: {
-          S3Object: {
-               Bucket: "lx-facesphotosrekognition",
-               Name: "Shroud_cropped.jpg"
+function searchByImage(image) {
+     var params = {
+          CollectionId: "youtubers",
+          Image: {
+               Bytes: image.data.buffer
           }
-     }
-};
-// rekognition.indexFaces(params, function (err, data) {
-//      if (err) console.log(err, err.stack); // an error occurred
-//      else console.log(data);           // successful response
-// });
+          // DetectionAttributes: [
+          // ],
+          // ExternalImageId: "youtubers",
+          // Image: {
+          //      S3Object: {
+          //           Bucket: "lx-facesphotosrekognition",
+          //           Name: "Shroud_cropped.jpg"
+          //      }
+          // }
+     };
+     rekognition.searchFacesByImage(params, function (err, data) {
+          if (err) console.log(err, err.stack); // an error occurred
+          else console.log(data);           // successful response
+     });
+}
 
 app.use(express.static('public'));
 
 app.post('/upload', function (req, res) {
-     if (Object.keys(req.files).length == 0) {
-          return res.status(400).send('No files were uploaded.');
-     }
+
+     // console.log(req.files);
+
+     if (!req.files) 
+         return res.status(400).send('No files were uploaded');
+     // if (Object.keys(req.files).length == 0) {
+     //      return res.status(400).send('No files were uploaded.');
+     // }
 
      // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-     let sampleFile = req.files.sampleFile;
+     let uploadedImage = req.files.faceToSerach;
 
-     // Use the mv() method to place the file somewhere on your server
-     sampleFile.mv('/somewhere/on/your/server/filename.jpg', function (err) {
-          if (err)
-               return res.status(500).send(err);
+     searchByImage(uploadedImage);
 
-          res.send('File uploaded!');
-     });
 });
+
+app.listen(PORT, function (err) {
+     if (err) {
+       throw err
+     }
+   
+     console.log('Server started on port ' + PORT);
+   });
